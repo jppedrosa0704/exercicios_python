@@ -1,7 +1,7 @@
 #======== BIBLIOTECAS ========
 import os
 import json
-
+import unicodedata
 #======== ARQUIVOS ========
 def carregar_dados(arquivo="filmes.json"):
     if os.path.exists(arquivo):
@@ -14,6 +14,9 @@ def salvar_dados(filmes, arquivo="filmes.json"):
         json.dump(filmes, f, ensure_ascii=False, indent=4)
 
 # ======== UTILIDADES ========
+def normalizar(texto):
+    return unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII').lower()
+
 def limpar_tela():
     os.system('cls' if os.name == 'nt' else 'clear')
 
@@ -25,8 +28,9 @@ def menu():
     print("=-"*20)
     print('[1] adicionar filme')
     print('[2] remover filme')
-    print('[3] listar filme por gênero')
-    print('[4] sair')
+    print('[3] Listar filme')
+    print('[4] listar filme por gênero')
+    print('[5] sair')
 
 # ======== ADICIONA FILMES E GÊNEROS
 def adicionar_filmes(filmes):
@@ -44,6 +48,7 @@ def adicionar_filmes(filmes):
             if filme['título'].lower() == titulo.lower():
                 print('Filme já existe')
                 duplicado = True
+                input('carregue "ENTER" para continuar...')
                 break
         if duplicado:
             return #sai da função
@@ -65,22 +70,35 @@ def adicionar_filmes(filmes):
     
     dados = {'título': titulo, 'gênero': genero}
     filmes.append(dados)
-    salvar_dados(filmes, arquivo="filmes.json")
+    filmes.sort(key=lambda f: normalizar(f['título']))  # ← AQUI
+    salvar_dados(filmes)
+
     print(f'💾  {titulo} salvo com sucesso!🎉')
     input('carregue "ENTER" para continuar...')
+
 # ======== REMOVE FILMES DA LISTA
+
 def remover_filme(filmes):
     limpar_tela()
+
     if not filmes:
         print('Não há filmes no catálogo ')
         input('carregue "ENTER" para continuar...')
-    
-    
+        return
+
     while True:
         limpar_tela()
-        for i, fime in enumerate(filmes, start=1):
+
+        # 🔽🔽🔽 ORDENA OS FILMES PELO TÍTULO (IGNORANDO ACENTOS) 🔽🔽🔽
+        filmes_ordenados = sorted(
+            filmes,
+            key=lambda f: normalizar(f['título'])
+        )
+
+        # Mostra a lista ordenada com IDs
+        for i, filme in enumerate(filmes_ordenados, start=1):
             print('=-' * 20)
-            print(f"ID: {i}    Título: {fime['título']}")
+            print(f"ID: {i}    Título: {filme['título']}")
         print('=-' * 20)
 
         try:
@@ -89,31 +107,54 @@ def remover_filme(filmes):
                 print('Operação cancelada pelo usuário.')
                 input('carregue "ENTER" para continuar...')
                 return
-            if remover < 1 or remover > len(filmes):
+
+            if remover < 1 or remover > len(filmes_ordenados):
                 print('⚠️  opção inválida!')
                 input('carregue "ENTER" para continuar...')
                 continue
-            else:
-                break
+
+            break
+
         except ValueError:
             print('⚠️  opção inválida!')
             input('carregue "ENTER" para continuar...')
-            continue
-    filme_removido = filmes[remover - 1 ]
-    del filmes[remover - 1 ]
-    print(f'{filme_removido} removido com sucesso!🎉')
-    input('carregue "ENTER" para continuar...')
+
+    # 🔽🔽🔽 REMOVE O FILME ESCOLHIDO 🔽🔽🔽
+    filme_removido = filmes_ordenados[remover - 1]
+    filmes.remove(filme_removido)
+
+    # 🔽🔽🔽 REORDENA A LISTA ORIGINAL ANTES DE SALVAR 🔽🔽🔽
+    filmes.sort(key=lambda f: normalizar(f['título']))
     salvar_dados(filmes)
+
+    print(f"🗑️ Filme removido: {filme_removido['título']}")
+    input('carregue "ENTER" para continuar...')
+
+
+    
     #filmes.clear() limpa a lista e deixa apenas vazio
 
-# LISTA FILMES POR GÊNEROS
 def listar_filmes(filmes):
+
+    filmes_ordenados = sorted(
+    filmes, key=lambda f: normalizar(f['título'])
+)
+
+    for i, fime in enumerate(filmes_ordenados, start=1):
+        print('=-' * 20)
+        print(f"ID: {i}    Título: {fime['título']}")
+    print('=-' * 20)
+
+    input('carregue "ENTER" para sair...')
+
+# LISTA FILMES POR GÊNEROS
+def listar_filmes_por_genero(filmes):
     
     while True:
         limpar_tela()
 
         #Verifca os generos dos filmes e grava dentro da lista sem repetir
-        generos_unicos = [] 
+        generos_unicos = []
         for f in filmes:
             if f['gênero'] not in generos_unicos:
                 generos_unicos.append(f['gênero'])
@@ -122,7 +163,7 @@ def listar_filmes(filmes):
             print(f'{i}. {genero}')
         try:
             opc = int(input('Digite o código do Gênero: '))
-            if opc >= 1 or opc <= len(generos_unicos):
+            if 1 <= opc <= len(generos_unicos):
                 genero_escolhido = generos_unicos[opc - 1]
                 print(f'Gênero escolhido: {genero_escolhido}')
                 input('carregue "ENTER" para continuar...')
@@ -137,16 +178,24 @@ def listar_filmes(filmes):
             continue
 
     print(f"\nFilmes do gênero '{genero_escolhido}':")
+
     contador = 1
     for f in filmes:
         if f['gênero'] == genero_escolhido:
-            print(f'{contador}. {f['título']}')
+            print(f"{contador}. {f['título']}")
             contador += 1
 
     input("\nCarregue ENTER para continuar...")
 
 limpar_tela()
 filmes = carregar_dados()
+
+# 🔽🔽🔽 CORREÇÃO DEFINITIVA 🔽🔽🔽
+# Ordena considerando letras com acento corretamente
+filmes.sort(key=lambda f: normalizar(f['título']))
+salvar_dados(filmes)
+# 🔼🔼🔼 FIM 🔼🔼🔼
+
 
 #======== PROGRAMA PRINCIPAL ========
 while True:
@@ -155,7 +204,7 @@ while True:
         menu()
         try:
             opc = int(input('escolha a opção desejada: '))
-            if opc < 1 or opc > 4:
+            if opc < 1 or opc > 5:
                 print('⚠️ Opção inválida!')
                 input('carregue "ENTER" para continuar...')
             else:
@@ -172,6 +221,8 @@ while True:
         case 3:
             listar_filmes(filmes)
         case 4:
+            listar_filmes_por_genero(filmes)
+        case 5:
             break
 
 print(filmes)
