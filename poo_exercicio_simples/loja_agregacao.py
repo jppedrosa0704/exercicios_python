@@ -45,7 +45,7 @@ class Produto:
 # Menu inicial
 print('[1] Adicionar produto')
 print('[2] Listar produtos')
-print('[3] Total dos produtos')
+print('[3] Valor Total dos produtos')
 print('[4] Sair')
 
 # Criando a instância da loja uma vez (agregação)
