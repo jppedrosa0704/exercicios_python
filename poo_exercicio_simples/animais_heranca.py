@@ -27,12 +27,8 @@ class Elefante(Animal):
         super().mostrar_info()
         print(f"Peso: {self.peso}Kg")
 
-#Crirando instâncias
-leao = Leao('Leão', 12, 'Feroz')
-#Chamando métodos
-leao.mostrar_info()
+leao = Leao('Leão', 12, 'Feroz') #Criando instâncias
+leao.mostrar_info() #Chamando método 
 print() #quebra de linha
-#Crirando instâncias
-elefante = Elefante('Elefante', 22, 278)
-#Chamando métodos
-elefante.mostrar_info()
+elefante = Elefante('Elefante', 22, 278) #Criando instâncias
+elefante.mostrar_info() #Chamando método
